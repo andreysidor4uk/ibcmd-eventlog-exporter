@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/andreysidor4uk/http-gateway-1c/internal/config"
+	"github.com/andreysidor4uk/http-gateway-1c/internal/logsreader"
 	"github.com/andreysidor4uk/http-gateway-1c/internal/logswriter"
 )
 
@@ -21,6 +22,11 @@ func main() {
 	logsWriter := logswriter.New(cfg)
 	wg.Go(func() {
 		logsWriter.Start(ctx)
+	})
+
+	logsReader := logsreader.New(cfg)
+	wg.Go(func() {
+		logsReader.Start(ctx, logsWriter.GetWriteChannel())
 	})
 
 	stop := make(chan os.Signal, 1)
