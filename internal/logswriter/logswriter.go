@@ -72,5 +72,5 @@ func (logsWriter LogsWriter) writeLog(msg []byte) error {
 
 func getFilename() string {
 	t := time.Now()
-	return t.Format("2006-01-02") + ".log"
+	return t.Format(time.DateOnly) + ".log"
 }
