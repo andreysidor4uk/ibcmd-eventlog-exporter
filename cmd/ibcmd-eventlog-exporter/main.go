@@ -16,14 +16,12 @@ func main() {
 
 	ctx, canel := context.WithCancel(context.Background())
 
-	wg := sync.WaitGroup{}
+	var wg sync.WaitGroup
 
 	logsWriter := logswriter.New(cfg)
-	go func() {
-		wg.Add(1)
+	wg.Go(func() {
 		logsWriter.Start(ctx)
-		wg.Done()
-	}()
+	})
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
