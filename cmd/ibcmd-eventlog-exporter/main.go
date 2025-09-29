@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,6 +15,15 @@ import (
 )
 
 func main() {
+	logFile, err := os.OpenFile("logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer logFile.Close()
+
+	logger := slog.New(slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
 	cfg := config.MustLoad()
 
 	ctx, canel := context.WithCancel(context.Background())
