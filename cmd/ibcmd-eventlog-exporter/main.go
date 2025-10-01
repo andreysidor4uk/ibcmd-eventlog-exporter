@@ -15,17 +15,16 @@ import (
 	"github.com/andreysidor4uk/http-gateway-1c/internal/retentioncontroller"
 )
 
+const logFileName = "logs.log"
+
 func main() {
-	logFile, err := os.OpenFile("logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	cfg := config.MustLoad()
+
+	logFile, err := initFileLogger()
 	if err != nil {
-		exit(err)
+		exit(fmt.Errorf("init file logger: %w", err))
 	}
 	defer logFile.Close()
-
-	logger := slog.New(slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	slog.SetDefault(logger)
-
-	cfg := config.MustLoad()
 
 	ctx, canel := context.WithCancel(context.Background())
 
@@ -63,4 +62,16 @@ func main() {
 func exit(err error) {
 	slog.Error(err.Error())
 	os.Exit(1)
+}
+
+func initFileLogger() (*os.File, error) {
+	logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("open log file: %w", err)
+	}
+
+	logger := slog.New(slog.NewTextHandler(logFile, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	return logFile, nil
 }
