@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -18,7 +18,7 @@ import (
 func main() {
 	logFile, err := os.OpenFile("logs.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatal(err.Error())
+		exit(err)
 	}
 	defer logFile.Close()
 
@@ -38,7 +38,10 @@ func main() {
 
 	logsReader := logsreader.New(cfg)
 	wg.Go(func() {
-		logsReader.Start(ctx, logsWriter.GetWriteChannel())
+		err := logsReader.Start(ctx, logsWriter.GetWriteChannel())
+		if err != nil {
+			exit(fmt.Errorf("start logs reader: %w", err))
+		}
 	})
 
 	retentionController := retentioncontroller.New(cfg)
@@ -52,4 +55,9 @@ func main() {
 
 	canel()
 	wg.Wait()
+}
+
+func exit(err error) {
+	slog.Error(err.Error())
+	os.Exit(1)
 }
