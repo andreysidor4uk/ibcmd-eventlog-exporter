@@ -33,12 +33,15 @@ func main() {
 
 	logsWriter := logswriter.New(cfg)
 	wg.Go(func() {
-		logsWriter.Start(ctx)
+		err := logsWriter.Start(ctx)
+		if err != nil {
+			exit(fmt.Errorf("start logs writer: %w", err))
+		}
 	})
 
 	logsReader := logsreader.New(cfg)
 	wg.Go(func() {
-		err := logsReader.Start(ctx, logsWriter.GetWriteChannel())
+		err := logsReader.Start(ctx, logsWriter.WriteChannel())
 		if err != nil {
 			exit(fmt.Errorf("start logs reader: %w", err))
 		}
