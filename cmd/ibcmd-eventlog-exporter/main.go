@@ -12,6 +12,7 @@ import (
 	"github.com/andreysidor4uk/http-gateway-1c/internal/config"
 	"github.com/andreysidor4uk/http-gateway-1c/internal/logsreader"
 	"github.com/andreysidor4uk/http-gateway-1c/internal/logswriter"
+	"github.com/andreysidor4uk/http-gateway-1c/internal/retentioncontroller"
 )
 
 func main() {
@@ -38,6 +39,11 @@ func main() {
 	logsReader := logsreader.New(cfg)
 	wg.Go(func() {
 		logsReader.Start(ctx, logsWriter.GetWriteChannel())
+	})
+
+	retentionController := retentioncontroller.New(cfg)
+	wg.Go(func() {
+		retentionController.Start(ctx)
 	})
 
 	stop := make(chan os.Signal, 1)

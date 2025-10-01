@@ -3,3 +3,4 @@ journal_dir:
 logs_dir: logs_dir
 start_date:
 pause_duration: 15s
+retention_period: 168h

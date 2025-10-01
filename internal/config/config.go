@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	IbcmdPath     string        `yaml:"ibcmd_path"`
-	JournalDir    string        `yaml:"journal_dir"`
-	LogsDir       string        `yaml:"logs_dir"`
-	StartDate     time.Time     `yaml:"start_date"`
-	PauseDuration time.Duration `yaml:"pause_duration"`
+	IbcmdPath       string        `yaml:"ibcmd_path"`
+	JournalDir      string        `yaml:"journal_dir"`
+	LogsDir         string        `yaml:"logs_dir"`
+	StartDate       time.Time     `yaml:"start_date"`
+	PauseDuration   time.Duration `yaml:"pause_duration"`
+	RetentionPeriod time.Duration `yaml:"retention_period"`
 }
 
 func MustLoad() *Config {
