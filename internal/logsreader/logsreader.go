@@ -70,7 +70,7 @@ func (logsReader *LogsReader) extractLogs(ctx context.Context) ([]byte, error) {
 	}
 	dateFrom = dateFrom.Add(time.Second)
 
-	dateTo := time.Now()
+	dateTo := time.Now().Add(-time.Second)
 
 	if err := logsReader.runIbcmdExportLogs(ctx, tempFileName, dateFrom, dateTo); err != nil {
 		return nil, fmt.Errorf("ibcmd exec export logs: %w", err)
