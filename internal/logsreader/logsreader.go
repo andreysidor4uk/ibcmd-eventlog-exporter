@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -16,6 +17,18 @@ const (
 	tempFilenamePattern = "logsreader"
 	positionFileName    = "position"
 )
+
+var positionFilePath string
+
+func init() {
+	// Используем абсолютный путь для файла позиции
+	absPath, err := filepath.Abs(positionFileName)
+	if err != nil {
+		positionFilePath = positionFileName
+	} else {
+		positionFilePath = absPath
+	}
+}
 
 var basicIbcmdParams = []string{"eventlog", "export", "-f", "json", "--skip-root"}
 
@@ -49,10 +62,15 @@ func (logsReader *LogsReader) Start(ctx context.Context, writeChan chan []byte) 
 			logs, err := logsReader.extractLogs(ctx)
 			if err != nil {
 				slog.Error(fmt.Errorf("export logs: %w", err).Error())
-				break
+				continue
 			}
 
-			writeChan <- logs
+			// Отправляем логи в канал с проверкой контекста
+			select {
+			case <-ctx.Done():
+				return nil
+			case writeChan <- logs:
+			}
 		}
 	}
 }
@@ -89,7 +107,7 @@ func (logsReader *LogsReader) extractLogs(ctx context.Context) ([]byte, error) {
 }
 
 func (logsReader *LogsReader) loadPosition() (time.Time, error) {
-	position, err := os.ReadFile(positionFileName)
+	position, err := os.ReadFile(positionFilePath)
 	if err != nil && os.IsNotExist(err) {
 		position = []byte(logsReader.cfg.StartDate.Format(time.RFC3339))
 	} else if err != nil {
@@ -105,11 +123,14 @@ func (logsReader *LogsReader) loadPosition() (time.Time, error) {
 }
 
 func (logsReader *LogsReader) savePosition(position time.Time) error {
-	return os.WriteFile(positionFileName, []byte(position.Format(time.RFC3339)), 0666)
+	return os.WriteFile(positionFilePath, []byte(position.Format(time.RFC3339)), 0666)
 }
 
 func (logsReader *LogsReader) runIbcmdExportLogs(ctx context.Context, tempFileName string, dateFrom time.Time, dateTo time.Time) error {
-	params := append(basicIbcmdParams,
+	// Создаём новый слайс, чтобы не мутировать глобальный basicIbcmdParams
+	params := make([]string, 0, len(basicIbcmdParams)+4)
+	params = append(params, basicIbcmdParams...)
+	params = append(params,
 		fmt.Sprintf("--from=%v", dateFormatFor1C(dateFrom)),
 		fmt.Sprintf("--to=%v", dateFormatFor1C(dateTo)),
 		fmt.Sprintf("--out=\"%v\"", tempFileName),

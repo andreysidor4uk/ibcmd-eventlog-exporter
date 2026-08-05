@@ -75,5 +75,5 @@ func needDeleteFile(fileName string, retentionPeriod time.Duration) bool {
 }
 
 func nameWithoutExtension(fileName string) string {
-	return strings.Split(fileName, ".")[0]
+	return strings.TrimSuffix(fileName, filepath.Ext(fileName))
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/andreysidor4uk/http-gateway-1c/internal/config"
@@ -29,10 +29,10 @@ func (logWriter *LogsWriter) WriteChannel() chan []byte {
 	return logWriter.writeChannel
 }
 
-func (logsWriter LogsWriter) Start(ctx context.Context) error {
+func (logsWriter *LogsWriter) Start(ctx context.Context) error {
 	err := checkDir(logsWriter.cfg.LogsDir)
 	if err != nil {
-		return fmt.Errorf("logs did: %w", err)
+		return fmt.Errorf("logs dir: %w", err)
 	}
 
 	for {
@@ -41,10 +41,10 @@ func (logsWriter LogsWriter) Start(ctx context.Context) error {
 			return nil
 		case msg, ok := <-logsWriter.writeChannel:
 			if !ok {
-				break
+				return nil
 			}
 			if len(msg) == 0 {
-				break
+				continue
 			}
 			if err := logsWriter.writeLog(msg); err != nil {
 				slog.Error(err.Error())
@@ -53,8 +53,8 @@ func (logsWriter LogsWriter) Start(ctx context.Context) error {
 	}
 }
 
-func (logsWriter LogsWriter) writeLog(msg []byte) error {
-	filePath := path.Join(logsWriter.cfg.LogsDir, getFilename())
+func (logsWriter *LogsWriter) writeLog(msg []byte) error {
+	filePath := filepath.Join(logsWriter.cfg.LogsDir, getFilename())
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -79,12 +79,8 @@ func getFilename() string {
 }
 
 func checkDir(dirPath string) error {
-	_, err := os.ReadDir(dirPath)
-	if err != nil {
-		err := os.Mkdir(dirPath, 0750)
-		if err != nil {
-			return err
-		}
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		return os.MkdirAll(dirPath, 0750)
 	}
 
 	return nil
