@@ -26,7 +26,7 @@ func main() {
 	}
 	defer logFile.Close()
 
-	ctx, canel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	var wg sync.WaitGroup
 
@@ -55,7 +55,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	<-stop
 
-	canel()
+	cancel()
 	wg.Wait()
 }
 
